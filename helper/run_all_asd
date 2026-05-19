@@ -1,0 +1,196 @@
+import os
+from pathlib import Path
+
+from run_asd import run_asd
+
+
+# -----------------------------------
+# RUN ASD ON ALL CLIPS
+# -----------------------------------
+def run_asd_on_clips(
+    clips_dir: str,
+    output_base_dir: str = "outputs/asd"
+):
+    """
+    Run LR-ASD on every video
+    inside clips directory.
+
+    Structure:
+
+    clips/
+        clip_0.mp4
+        clip_1.mp4
+
+    outputs/asd/
+        clip_0/
+            scores.pckl
+            tracks.pckl
+
+        clip_1/
+            scores.pckl
+            tracks.pckl
+    """
+
+    # -----------------------------------
+    # VALIDATE CLIPS DIR
+    # -----------------------------------
+    if not os.path.exists(clips_dir):
+
+        raise FileNotFoundError(
+            f"\n❌ Clips directory not found:\n{clips_dir}"
+        )
+
+    # -----------------------------------
+    # SUPPORTED VIDEO EXTENSIONS
+    # -----------------------------------
+    video_extensions = [
+        ".mp4",
+        ".avi",
+        ".mov",
+        ".mkv"
+    ]
+
+    # -----------------------------------
+    # GET VIDEO FILES
+    # -----------------------------------
+    video_files = []
+
+    for file in os.listdir(clips_dir):
+
+        file_path = os.path.join(
+            clips_dir,
+            file
+        )
+
+        if (
+            os.path.isfile(file_path)
+            and
+            Path(file).suffix.lower()
+            in video_extensions
+        ):
+
+            video_files.append(
+                file_path
+            )
+
+    # -----------------------------------
+    # NO VIDEOS FOUND
+    # -----------------------------------
+    if len(video_files) == 0:
+
+        print(
+            "\n⚠️ No video files found"
+        )
+
+        return []
+
+    # -----------------------------------
+    # SORT FILES
+    # -----------------------------------
+    video_files.sort()
+
+    # -----------------------------------
+    # RESULTS
+    # -----------------------------------
+    results = []
+
+    # -----------------------------------
+    # PROCESS EACH VIDEO
+    # -----------------------------------
+    for index, video_path in enumerate(video_files):
+
+        video_name = Path(
+            video_path
+        ).stem
+
+        print("\n")
+        print("=" * 50)
+
+        print(
+            f"🎬 Processing "
+            f"{index + 1}/{len(video_files)}"
+        )
+
+        print(
+            f"Video: {video_name}"
+        )
+
+        print("=" * 50)
+
+        # -----------------------------------
+        # OUTPUT DIR FOR THIS CLIP
+        # -----------------------------------
+        output_dir = os.path.join(
+            output_base_dir,
+            video_name
+        )
+
+        try:
+
+            result = run_asd(
+                video_path=video_path,
+                output_dir=output_dir
+            )
+
+            results.append({
+                "video": video_name,
+                "status": "success",
+                "result": result
+            })
+
+            print(
+                f"\n✅ Finished: {video_name}"
+            )
+
+        except Exception as e:
+
+            print(
+                f"\n❌ Failed: {video_name}"
+            )
+
+            print(str(e))
+
+            results.append({
+                "video": video_name,
+                "status": "failed",
+                "error": str(e)
+            })
+
+    # -----------------------------------
+    # SUMMARY
+    # -----------------------------------
+    print("\n")
+    print("=" * 50)
+    print("🎯 ASD PROCESSING COMPLETE")
+    print("=" * 50)
+
+    success_count = sum(
+        1
+        for r in results
+        if r["status"] == "success"
+    )
+
+    failed_count = sum(
+        1
+        for r in results
+        if r["status"] == "failed"
+    )
+
+    print(f"\n✅ Success: {success_count}")
+    print(f"❌ Failed: {failed_count}")
+
+    return results
+
+
+# -----------------------------------
+# EXAMPLE USAGE
+# -----------------------------------
+if __name__ == "__main__":
+
+    results = run_asd_on_clips(
+        clips_dir="clips",
+        output_base_dir="outputs/asd"
+    )
+
+    print("\nRESULTS:")
+    print(results)

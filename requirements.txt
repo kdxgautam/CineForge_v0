@@ -1,0 +1,8 @@
+fastapi[standard]
+whisperx
+opencv-python
+yt_dlp
+gdownv==4.6.0
+google-genai
+python_speech_features
+scenedetect==0.5.6
