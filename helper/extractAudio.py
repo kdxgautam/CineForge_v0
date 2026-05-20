@@ -34,4 +34,4 @@ def extract_audio(input_video, output_audio=None, format="mp3"):
     return output_audio
 
 
-audio_path = extract_audio("downloads/video.mp4")
+audio_path = extract_audio("downloads/normalized.mp4")

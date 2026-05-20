@@ -22,9 +22,9 @@ def transcribe_with_diarization(
     audio_file: str,
     output_file: str = "output.json",
     model_size: str = "small",
-    device: str = "cuda",
+    device: str = "cpu",
     batch_size: int = 2,
-    compute_type: str = "float16"
+    compute_type: str = "int8_float16"
 ):
 
     # -----------------------------------
