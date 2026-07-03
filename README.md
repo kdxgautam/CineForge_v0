@@ -27,6 +27,8 @@ return final clips
 - `GROQ_API_KEY`
 - Local LR-ASD checkout and weights in `external/LR-ASD`
 - CUDA is optional but strongly recommended for WhisperX/LR-ASD
+- A JavaScript runtime for yt-dlp is optional, but recommended for YouTube.
+  Without one, yt-dlp can warn that some formats may be missing.
 
 ## Fresh Clone Setup
 
@@ -75,6 +77,11 @@ The placeholder values in `.env.example` are not valid credentials. If
 from `https://api.groq.com/openai/v1/chat/completions`, replace
 `GROQ_API_KEY` with a real Groq key.
 
+`scripts/check_setup.py` only checks whether `GROQ_API_KEY` and `HF_TOKEN`
+exist; it cannot verify that placeholder values are real credentials. Replace
+`replace_with_your_groq_api_key` before expecting a complete `/process-video`
+run to pass.
+
 For CUDA, verify it first:
 
 ```bash
@@ -82,6 +89,12 @@ uv run python -c "import torch; print(torch.cuda.is_available())"
 ```
 
 Then use `"device": "cuda"` and usually `"compute_type": "float16"` in the API request.
+
+CPU works for setup and short smoke tests, but full-video transcription can be
+very slow. The sample YouTube URL below is roughly one hour long; on CPU the
+request can appear quiet for many minutes while WhisperX is transcribing and
+aligning. Use CUDA for full runs when available, or use the one-clip smoke test
+below to validate the downstream pipeline quickly.
 
 ## LR-ASD Setup
 
@@ -205,6 +218,29 @@ tested local environment.
    Fix: put a real `GROQ_API_KEY` in `.env`. The setup checker only confirms
    that the variable is set, not that the key is valid.
 
+6. yt-dlp can warn that no supported JavaScript runtime is available.
+
+   Symptom:
+
+   ```text
+   WARNING: [youtube] No supported JavaScript runtime could be found...
+   ```
+
+   This warning did not block the tested download, but YouTube extraction can
+   become less reliable without a JS runtime. Install a runtime supported by
+   yt-dlp, such as `deno` or `node`, if YouTube downloads start missing formats
+   or failing.
+
+7. Managed or sandboxed shells can isolate localhost networking.
+
+   Symptom: a server started in one shell is listening, but a client command in
+   another managed context gets `Operation not permitted` or `Connection
+   refused` for `127.0.0.1`.
+
+   Fix: run the server and client from the same normal terminal/session, or use
+   the direct helper commands in the one-clip smoke test to validate pipeline
+   stages without HTTP.
+
 ## Check Setup
 
 ```bash
@@ -217,7 +253,8 @@ This checks the env file, Groq key, ffmpeg, LR-ASD files, Python imports, Torch,
 
 If a full `/process-video` request fails before clips are generated, you can
 test the downstream stages without calling Groq by creating one short highlight
-from an existing downloaded video and transcript.
+from an existing downloaded video. This is also useful when the full source
+video is long and CPU transcription would take too much time.
 
 Example using an existing job:
 
@@ -258,6 +295,15 @@ Expected final output:
 ```text
 jobs/<job_id>/debug_one_clip/outputs/final/clip_0_subtitled.mp4
 ```
+
+Validate the output:
+
+```bash
+ffprobe -v error -show_entries format=duration,size -show_streams -of json "$JOB/debug_one_clip/outputs/final/clip_0_subtitled.mp4"
+```
+
+For the tested 20-second window from the sample YouTube video, the final smoke
+output was a 20-second vertical MP4 with video and audio streams.
 
 ## Run Server
 
@@ -316,6 +362,17 @@ jobs/<job_id>/status.json
 ```
 
 The response includes the final subtitled clip paths when complete.
+
+For the sample URL, the download and merge stage should produce:
+
+```text
+jobs/<job_id>/downloads/video.mp4
+jobs/<job_id>/downloads/audio.mp3
+```
+
+If the status remains at `transcribe_full_video` on CPU, check whether the
+Python process is still using CPU before assuming it is hung. On a CPU-only
+machine this stage can dominate the entire run.
 
 ## YouTube Notes
 
