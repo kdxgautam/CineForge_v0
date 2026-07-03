@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from run_asd import run_asd
+from .run_asd import run_asd
 
 
 # -----------------------------------
@@ -194,7 +194,6 @@ if __name__ == "__main__":
 
     print("\nRESULTS:")
     print(results)
-
 
 
 

@@ -68,10 +68,9 @@ def generate_srt(
     # -----------------------------------
     # WRITE SRT
     # -----------------------------------
-    os.makedirs(
-    os.path.dirname(output_srt),
-    exist_ok=True
-    )
+    output_dir = os.path.dirname(output_srt)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
     with open(
         output_srt,
         "w"
@@ -119,9 +118,3 @@ def generate_srt(
     print(
         f"\n✅ SRT saved:\n{output_srt}"
     )
-
-generate_srt(
-    transcript_json="outputs/transcripts/clip_0.json",
-    output_srt="outputs/srt/clip_0.srt",
-    words_per_subtitle=3
-)

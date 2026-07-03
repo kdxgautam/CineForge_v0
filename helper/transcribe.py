@@ -1,8 +1,9 @@
-import whisperx
 import gc
 import torch
 import json
 import os
+
+from .whisperx_compat import load_whisperx
 
 
 
@@ -10,14 +11,11 @@ def generate_word_level_transcript(
     video_path: str,
     output_json: str,
     model_size: str = "small",
-    device: str = "cuda"
+    device: str = "cuda",
+    batch_size: int = 1,
+    compute_type: str = "int8"
 ):
-
-    # -----------------------------------
-    # CONFIG
-    # -----------------------------------
-    batch_size = 1
-    compute_type = "int8"
+    whisperx = load_whisperx()
 
     # -----------------------------------
     # LOAD MODEL
@@ -49,7 +47,8 @@ def generate_word_level_transcript(
     del model
 
     gc.collect()
-    torch.cuda.empty_cache()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
 
     # -----------------------------------
     # ALIGNMENT
@@ -74,15 +73,15 @@ def generate_word_level_transcript(
     del model_a
 
     gc.collect()
-    torch.cuda.empty_cache()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
 
     # -----------------------------------
     # SAVE JSON
     # -----------------------------------
-    os.makedirs(
-    os.path.dirname(output_json),
-    exist_ok=True
-)
+    output_dir = os.path.dirname(output_json)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
     with open(output_json, "w") as f:
 
         json.dump(
@@ -96,9 +95,3 @@ def generate_word_level_transcript(
     )
 
     return result
-
-generate_word_level_transcript(
-    video_path="clips/clip_0.mp4",
-    output_json="outputs/transcripts/clip_0.json",
-    model_size="small",
-    device="cuda")

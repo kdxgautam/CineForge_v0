@@ -5,6 +5,8 @@ import subprocess
 
 from pathlib import Path
 
+from .runtime import runtime_env
+
 
 # -----------------------------------
 # PATHS
@@ -101,21 +103,9 @@ def run_asd(
     process = subprocess.run(
         command,
         cwd=str(LR_ASD_DIR),
-        capture_output=True,
+        env=runtime_env(),
         text=True
     )
-
-    # -----------------------------------
-    # STDOUT
-    # -----------------------------------
-    print("\n========== STDOUT ==========")
-    print(process.stdout)
-
-    # -----------------------------------
-    # STDERR
-    # -----------------------------------
-    print("\n========== STDERR ==========")
-    print(process.stderr)
 
     # -----------------------------------
     # ERROR CHECK
@@ -123,7 +113,7 @@ def run_asd(
     if process.returncode != 0:
 
         raise RuntimeError(
-            f"\n❌ LR-ASD failed:\n{process.stderr}"
+            "\n❌ LR-ASD failed"
         )
 
     print("\n✅ LR-ASD completed")

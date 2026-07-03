@@ -7,7 +7,7 @@ def download_youtube_video(
     url: str,
     output_dir: str = "downloads",
     quality: str = "best"
-):
+) -> str:
     """
     Download YouTube video + audio separately and merge them.
 
@@ -41,16 +41,8 @@ def download_youtube_video(
     }
 
     with YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=False)
-
-        # Download video + audio separately
         ydl.download([url])
 
         print("\nDownload + merge complete.\n")
 
-
-# Example usage
-download_youtube_video(
-    url="https://www.youtube.com/watch?v=ef3D5Ak1HP4",
-    quality="1080"  # or "best"
-)
+    return os.path.join(output_dir, "video.mp4")

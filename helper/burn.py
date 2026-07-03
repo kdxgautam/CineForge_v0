@@ -1,4 +1,11 @@
 import subprocess
+import os
+from pathlib import Path
+
+
+def _escape_subtitles_path(path: str) -> str:
+    resolved = str(Path(path).resolve())
+    return resolved.replace("\\", "\\\\").replace(":", "\\:").replace("'", "\\'")
 
 
 def burn_subtitles(
@@ -6,6 +13,10 @@ def burn_subtitles(
     input_srt: str,
     output_video: str
 ):
+    output_dir = os.path.dirname(output_video)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+
 
     command = [
         "ffmpeg",
@@ -14,7 +25,7 @@ def burn_subtitles(
         "-i", input_video,
 
         "-vf",
-        f"subtitles={input_srt}",
+        f"subtitles='{_escape_subtitles_path(input_srt)}'",
 
         "-c:v", "libx264",
 
@@ -35,10 +46,3 @@ def burn_subtitles(
     print(
         f"\n✅ Subtitle video saved:\n{output_video}"
     )
-
-
-burn_subtitles(
-    input_video="outputs/final/clip_0.mp4",
-    input_srt="outputs/srt/clip_0.srt",
-    output_video="outputs/final/clip_0_1.mp4"
-)

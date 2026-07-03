@@ -1,6 +1,9 @@
 # Python-generated files
 __pycache__/
 *.py[oc]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 build/
 dist/
 wheels/
@@ -8,9 +11,41 @@ wheels/
 
 # Virtual environments
 .venv
-external
+.uv-cache/
+.cache/
+
+# Secrets
 .env
+.env.*
+!.env.example
+
+# Generated media/output
 downloads
-*.json
 clips
 outputs
+jobs
+highlights.json
+output*.json
+*.pckl
+*.mp4
+*.mov
+*.mkv
+*.avi
+*.webm
+*.wav
+*.mp3
+*.srt
+
+# Large external runtime dependency.
+# Keep this out of git unless you intentionally vendor it or use Git LFS.
+external/
+
+# Editor/local state
+.vscode/
+sync/
+
+# Local experimental scripts from earlier prototyping.
+scripts/test_*.py
+
+# No Node project is currently defined in this backend.
+package-lock.json

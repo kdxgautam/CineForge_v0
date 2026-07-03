@@ -170,6 +170,8 @@ def generate_clips(
     # -----------------------------------
     # GENERATE CLIPS
     # -----------------------------------
+    generated = []
+
     for index, clip in enumerate(highlights):
 
         start = clip["start"]
@@ -202,6 +204,7 @@ def generate_clips(
                 end=end,
                 output_video=output_video
             )
+            generated.append(output_video)
 
         except Exception as e:
 
@@ -212,6 +215,7 @@ def generate_clips(
             print(str(e))
 
     print("\n✅ All clips processed!")
+    return generated
 
 
 # -----------------------------------

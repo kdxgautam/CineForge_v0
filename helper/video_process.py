@@ -6,7 +6,7 @@ import numpy as np
 
 from pathlib import Path
 
-from asdHelper import (
+from .asdHelper import (
     max_score_per_frame,
     build_speaker_segments
 )
@@ -395,6 +395,8 @@ def process_all_clips(
         if file.endswith(".mp4")
     ])
 
+    results = []
+
     for clip_file in clip_files:
 
         clip_name = Path(
@@ -430,11 +432,27 @@ def process_all_clips(
             )
 
             print(f"✅ Finished {clip_name}")
+            results.append({
+                "clip": clip_name,
+                "status": "success",
+                "output": output_video_path,
+            })
 
         except Exception as e:
 
             print(f"❌ Failed {clip_name}")
             print(str(e))
+            results.append({
+                "clip": clip_name,
+                "status": "failed",
+                "error": str(e),
+            })
+
+    failures = [result for result in results if result["status"] == "failed"]
+    if failures:
+        raise RuntimeError(f"Failed to process clips: {failures}")
+
+    return results
 
 
 # -----------------------------------

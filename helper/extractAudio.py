@@ -29,9 +29,6 @@ def extract_audio(input_video, output_audio=None, format="mp3"):
         output_audio
     ]
 
-    subprocess.run(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
 
     return output_audio
-
-
-audio_path = extract_audio("downloads/normalized.mp4")
