@@ -13,7 +13,6 @@ generate_highlights
 generate_clips
 run_asd_on_clips
 process_all_clips
-transcribe_processed_clips
 generate_srts_from_transcript
 burn_subtitles_on_all_clips
 return final clips
@@ -24,11 +23,20 @@ return final clips
 - Python `3.12`, matching `.python-version`
 - `uv`
 - `ffmpeg` available on `PATH`
-- `GROQ_API_KEY`
+- `OPENROUTER_API_KEY` or `GROQ_API_KEY`
 - Local LR-ASD checkout and weights in `external/LR-ASD`
 - CUDA is optional but strongly recommended for WhisperX/LR-ASD
 - A JavaScript runtime for yt-dlp is optional, but recommended for YouTube.
   Without one, yt-dlp can warn that some formats may be missing.
+
+Subtitles are generated from the full-video transcript and clipped to each
+highlight range. This avoids running WhisperX a second time on every processed
+clip. If the full transcript has word timestamps, the SRTs are word-grouped;
+otherwise they fall back to coarser segment-level subtitles.
+
+Highlight generation always returns at least one clip when transcript segments
+exist. If the LLM provider returns no valid highlights, the backend selects a
+fallback transcript window so the pipeline can still produce a clip.
 
 ## Fresh Clone Setup
 
@@ -65,7 +73,9 @@ UV_CACHE_DIR=.uv-cache MPLCONFIGDIR=.cache/matplotlib uv run uvicorn app:app --h
 Edit `.env`:
 
 ```bash
-GROQ_API_KEY=your_groq_api_key
+OPENROUTER_API_KEY=your_openrouter_api_key
+OPENROUTER_MODEL=openai/gpt-4o-mini
+LLM_PROVIDER=auto
 HF_TOKEN=your_huggingface_token_if_needed
 DEFAULT_TRANSCRIBE_DEVICE=cpu
 DEFAULT_WHISPER_MODEL=small
@@ -74,13 +84,13 @@ DEFAULT_WHISPER_COMPUTE_TYPE=int8
 
 The placeholder values in `.env.example` are not valid credentials. If
 `/process-video` fails after transcription with a `401 Unauthorized` response
-from `https://api.groq.com/openai/v1/chat/completions`, replace
-`GROQ_API_KEY` with a real Groq key.
+from the LLM provider, replace `OPENROUTER_API_KEY` or `GROQ_API_KEY` with a
+real key.
 
-`scripts/check_setup.py` only checks whether `GROQ_API_KEY` and `HF_TOKEN`
-exist; it cannot verify that placeholder values are real credentials. Replace
-`replace_with_your_groq_api_key` before expecting a complete `/process-video`
-run to pass.
+`scripts/check_setup.py` only checks whether an LLM key and `HF_TOKEN` exist;
+it cannot verify that placeholder values are real credentials. Replace
+`replace_with_your_openrouter_api_key` or `replace_with_your_groq_api_key`
+before expecting a complete `/process-video` run to pass.
 
 For CUDA, verify it first:
 
@@ -207,16 +217,18 @@ tested local environment.
    return np.array(keep).astype(int)
    ```
 
-5. Groq credentials are required before full `/process-video` can pass.
+5. LLM credentials are required before full `/process-video` can pass.
 
    Symptom:
 
    ```text
-   Client error '401 Unauthorized' for url 'https://api.groq.com/openai/v1/chat/completions'
+   Client error '401 Unauthorized' for url 'https://openrouter.ai/api/v1/chat/completions'
    ```
 
-   Fix: put a real `GROQ_API_KEY` in `.env`. The setup checker only confirms
-   that the variable is set, not that the key is valid.
+   Fix: put a real `OPENROUTER_API_KEY` in `.env`, or use `GROQ_API_KEY` as a
+   fallback. `LLM_PROVIDER=auto` prefers OpenRouter when both are present. The
+   setup checker only confirms that a variable is set, not that the key is
+   valid.
 
 6. yt-dlp can warn that no supported JavaScript runtime is available.
 
@@ -247,12 +259,12 @@ tested local environment.
 uv run python scripts/check_setup.py
 ```
 
-This checks the env file, Groq key, ffmpeg, LR-ASD files, Python imports, Torch, CUDA visibility, and WhisperX import compatibility.
+This checks the env file, LLM key, ffmpeg, LR-ASD files, Python imports, Torch, CUDA visibility, and WhisperX import compatibility.
 
 ## One-Clip Smoke Test
 
 If a full `/process-video` request fails before clips are generated, you can
-test the downstream stages without calling Groq by creating one short highlight
+test the downstream stages without calling the LLM provider by creating one short highlight
 from an existing downloaded video. This is also useful when the full source
 video is long and CPU transcription would take too much time.
 
@@ -320,8 +332,15 @@ uv run uvicorn app:app --host 127.0.0.1 --port 8000
 Open:
 
 ```text
+http://127.0.0.1:8000/ui
 http://127.0.0.1:8000/docs
 ```
+
+The `/ui` page is a small static frontend served by this FastAPI app. It has no
+separate build step and no npm dependency. It submits jobs through
+`POST /process-video-async`, then polls `GET /jobs/{job_id}` so the page shows
+which pipeline stage is currently running. During subtitle burning, final clip
+links appear one by one as each clip is completed.
 
 ## Test `/process-video`
 
@@ -336,7 +355,9 @@ CPU-safe request:
   "batch_size": 2,
   "compute_type": "int8",
   "max_segments": 80,
-  "words_per_subtitle": 3
+  "words_per_subtitle": 3,
+  "subtitle_font_size": 11,
+  "subtitle_margin_v": 35
 }
 ```
 
@@ -351,7 +372,9 @@ CUDA request:
   "batch_size": 2,
   "compute_type": "float16",
   "max_segments": 80,
-  "words_per_subtitle": 3
+  "words_per_subtitle": 3,
+  "subtitle_font_size": 11,
+  "subtitle_margin_v": 35
 }
 ```
 
@@ -386,6 +409,7 @@ Do commit:
 app.py
 main.py
 helper/
+frontend/
 scripts/check_setup.py
 docs/LR_ASD_PATCHES.md
 .env.example
@@ -425,7 +449,7 @@ uv run python scripts/check_setup.py
 Then stage the project files:
 
 ```bash
-git add .gitignore README.md .env.example pyproject.toml uv.lock requirements.txt main.py app.py helper docs scripts/check_setup.py
+git add .gitignore README.md .env.example pyproject.toml uv.lock requirements.txt main.py app.py helper frontend docs scripts/check_setup.py
 git commit -m "Prepare backend for reproducible local setup"
 git push
 ```

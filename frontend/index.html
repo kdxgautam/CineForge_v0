@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CineForge</title>
+    <link rel="stylesheet" href="/ui/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <section class="panel">
+        <div class="title-row">
+          <div>
+            <h1>CineForge</h1>
+            <p class="muted">Clip generator backend</p>
+          </div>
+          <a class="docs-link" href="/docs">API Docs</a>
+        </div>
+
+        <form id="process-form" class="form">
+          <label class="field full">
+            <span>YouTube URL</span>
+            <input id="url" name="url" type="url" required placeholder="https://www.youtube.com/watch?v=...">
+          </label>
+
+          <details class="advanced">
+            <summary>Advanced settings</summary>
+
+            <div class="grid">
+              <label class="field">
+                <span>Quality</span>
+                <select id="quality" name="quality">
+                  <option value="1080">1080</option>
+                  <option value="720">720</option>
+                  <option value="480">480</option>
+                  <option value="best">best</option>
+                </select>
+              </label>
+
+              <label class="field">
+                <span>Whisper model</span>
+                <select id="model_size" name="model_size">
+                  <option value="small">small</option>
+                  <option value="base">base</option>
+                  <option value="medium">medium</option>
+                  <option value="large-v3">large-v3</option>
+                </select>
+              </label>
+
+              <label class="field">
+                <span>Device</span>
+                <select id="device" name="device">
+                  <option value="cpu">cpu</option>
+                  <option value="cuda">cuda</option>
+                </select>
+              </label>
+
+              <label class="field">
+                <span>Compute</span>
+                <select id="compute_type" name="compute_type">
+                  <option value="int8">int8</option>
+                  <option value="float16">float16</option>
+                  <option value="float32">float32</option>
+                </select>
+              </label>
+
+              <label class="field">
+                <span>Batch size</span>
+                <input id="batch_size" name="batch_size" type="number" min="1" max="32" value="2">
+              </label>
+
+              <label class="field">
+                <span>Max segments</span>
+                <input id="max_segments" name="max_segments" type="number" min="1" max="500" value="80">
+              </label>
+
+              <label class="field">
+                <span>Subtitle words</span>
+                <input id="words_per_subtitle" name="words_per_subtitle" type="number" min="1" max="12" value="3">
+              </label>
+
+              <label class="field">
+                <span>Subtitle size</span>
+                <input id="subtitle_font_size" name="subtitle_font_size" type="number" min="6" max="28" value="11">
+              </label>
+
+              <label class="field">
+                <span>Subtitle bottom gap</span>
+                <input id="subtitle_margin_v" name="subtitle_margin_v" type="number" min="0" max="240" value="35">
+              </label>
+            </div>
+          </details>
+
+          <div class="actions">
+            <button id="submit-button" type="submit">Start</button>
+            <button id="sample-button" type="button" class="secondary">Sample</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel">
+        <div class="status-bar">
+          <div class="status-left">
+            <span id="state-dot" class="dot idle"></span>
+            <div>
+              <strong id="state-label">Idle</strong>
+              <p id="stage-label" class="muted">Waiting for a job</p>
+            </div>
+          </div>
+          <span id="elapsed" class="timer">00:00</span>
+        </div>
+
+        <div class="progress-shell">
+          <div id="progress-fill" class="progress-fill"></div>
+        </div>
+
+        <ol id="stage-list" class="stage-list"></ol>
+        <div id="summary" class="summary"></div>
+        <div id="clips" class="clips"></div>
+        <pre id="output" class="output">{}</pre>
+      </section>
+
+      <section class="panel compact">
+        <form id="job-form" class="job-form">
+          <label class="field">
+            <span>Job ID</span>
+            <input id="job-id" name="job-id" type="text" placeholder="job id">
+          </label>
+          <button type="submit" class="secondary">Check</button>
+        </form>
+      </section>
+    </main>
+    <script src="/ui/app.js"></script>
+  </body>
+</html>

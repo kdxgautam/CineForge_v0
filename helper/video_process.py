@@ -335,15 +335,7 @@ def process_clip(
         tracks = pickle.load(f)
 
     # -----------------------------------
-    # FRAME SCORES
-    # -----------------------------------
-    frame_score = max_score_per_frame(
-        tracks,
-        scores
-    )
-
-    # -----------------------------------
-    # TOTAL FRAMES
+    # FALLBACK: NO ASD TRACKS
     # -----------------------------------
     cap = cv2.VideoCapture(
         clip_video_path
@@ -355,6 +347,34 @@ def process_clip(
 
     cap.release()
 
+    if (
+        not tracks
+        or not scores
+        or total_frames <= 0
+    ):
+
+        print(
+            "⚠️ ASD returned no usable tracks; "
+            "using centered crop fallback"
+        )
+
+        crop_video(
+            clip_video_path,
+            [(0, max(total_frames - 1, 0), None)],
+            [],
+            output_video_path
+        )
+
+        return
+
+    # -----------------------------------
+    # FRAME SCORES
+    # -----------------------------------
+    frame_score = max_score_per_frame(
+        tracks,
+        scores
+    )
+
     # -----------------------------------
     # BUILD SEGMENTS
     # -----------------------------------
@@ -363,6 +383,21 @@ def process_clip(
         total_frames,
         MIN_FRAMES=30
     )
+
+    if not segments:
+
+        print(
+            "⚠️ ASD produced no stable speaker segments; "
+            "using centered crop fallback"
+        )
+
+        segments = [
+            (
+                0,
+                max(total_frames - 1, 0),
+                None
+            )
+        ]
 
     # -----------------------------------
     # CROP VIDEO

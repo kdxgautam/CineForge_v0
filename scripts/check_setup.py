@@ -46,10 +46,12 @@ def main() -> int:
     ]:
         failures += not check_file(path, label)
 
-    if os.getenv("GROQ_API_KEY"):
+    if os.getenv("OPENROUTER_API_KEY") or os.getenv("openrouter_api_key"):
+        ok("OPENROUTER_API_KEY is set")
+    elif os.getenv("GROQ_API_KEY"):
         ok("GROQ_API_KEY is set")
     else:
-        fail("GROQ_API_KEY is not set in .env")
+        fail("OPENROUTER_API_KEY or GROQ_API_KEY is not set in .env")
         failures += 1
 
     if os.getenv("HF_TOKEN"):
